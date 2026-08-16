@@ -1,6 +1,8 @@
 "use client";
 //Import de la fonction useState permettant de changer l'état de complétion de nos habitudes
-import { useState } from "react";
+import { useState, type SubmitEvent} from "react";
+
+
 
 //définition du type Habit
 type Habit = {
@@ -23,8 +25,30 @@ const initialHabits: Habit[] = [
 export default function Home() {
   //stockage des états de chaque habitude
   const [habits, setHabits] = useState(initialHabits);
+  const [newHabitName, setNewHabitName]= useState("");
 
   //fonctions
+
+  function addHabit(event: SubmitEvent<HTMLFormElement>){
+    event.preventDefault();
+    
+    const name=newHabitName.trim();
+
+    if(name===""){
+      return;
+    }
+
+    const newHabit: Habit={
+      id:Date.now(),
+      name: name,
+      completed: false,
+    };
+
+    setHabits([...habits, newHabit]);
+    setNewHabitName("");
+  
+  }
+
   function toggleHabit(id: number) {
     const updatedHabits = habits.map(
       (habit) => {
@@ -50,6 +74,16 @@ export default function Home() {
           <h2 className="text-xl font-semibold tracking-tight text-black dark:text-zinc-50">
             Today
           </h2>
+
+          <form onSubmit={addHabit}>
+            <input
+            type="text"
+            value={newHabitName}
+            onChange={(event)=>setNewHabitName(event.target.value)}
+            placeholder="New habit"
+            />
+            <button type="submit">Add</button>
+          </form>
           <ul>
             {habits.map((habit) => (
               <li key={habit.id}>
