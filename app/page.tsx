@@ -1,17 +1,25 @@
+/*/
+Composant interactif : autorise les fonctionnalités exécutées dans le navigateur : useState, clics, saisie, etc.
+Next.js peut quand même prégénérer le HJTML in itial, puis React rend la page interactive dans le navigateur : c'est l'hydratation.
+/*/
 "use client";
-//Import de la fonction useState permettant de changer l'état de complétion de nos habitudes
-import { useState, type SubmitEvent} from "react";
+/*/
+- useState conserve une valeur entre les rendus React
+- SubmitEvent décrit uniqueent ^pour TypeScript le type d'un evnt de formulaire
+- type précise que cet import disparaîtra après la compilation vers JavaScript
+/*/
+import { useState, type SubmitEvent } from "react";
 
 
 
-//définition du type Habit
+//définition du type Habit : c'est la structure obligatoire de chaque habitude manipulée par l'aplication
 type Habit = {
   id: number;
   name: string;
   completed: boolean;
 };
 
-//déclaration des différents habitudes
+//Habitudes affichées lors du premier chargement de la page
 const initialHabits: Habit[] = [
   { id: 1, name: "Read 20 minutes", completed: false },
   { id: 2, name: "Exercise", completed: false },
@@ -23,32 +31,51 @@ const initialHabits: Habit[] = [
 
 
 export default function Home() {
-  //stockage des états de chaque habitude
+
+  //Liste des habitudes actuellement affichées
   const [habits, setHabits] = useState(initialHabits);
-  const [newHabitName, setNewHabitName]= useState("");
+
+  /*/
+  - Texte actuellement saisi dans le champ d'ajout
+  - Chaque useState retourne actuellement 2 elts :
+    - la valeur actuelle;
+    - une fonction permettant de le remplacer.
+  Quand on appelle un setter comme setHabits, React mémorise la nouvelle valeur et réexécute  Home pour actualiser l'interface  
+  /*/
+  const [newHabitName, setNewHabitName] = useState("");
 
   //fonctions
 
-  function addHabit(event: SubmitEvent<HTMLFormElement>){
+  //Valide le formulaire et ajoute une nouvelle habitude à la liste
+  function addHabit(event: SubmitEvent<HTMLFormElement>) {
+    //Empêche le rechargement automatique de la page
     event.preventDefault();
-    
-    const name=newHabitName.trim();
 
-    if(name===""){
+    //Retire les espaces placés avant et après le nom
+    const name = newHabitName.trim();
+
+    //Refuse les habitudes dont le nom est vide
+    if (name === "") {
       return;
     }
 
-    const newHabit: Habit={
-      id:Date.now(),
+    //Construit une nouvelle habitude conforme au type Habit
+    const newHabit: Habit = {
+      id: Date.now(),
       name: name,
       completed: false,
     };
 
+    //Crée un nouveau contenant les nouvelles habitudes et les anciennes
     setHabits([...habits, newHabit]);
+
+    //Vide le champ après l'ajout
     setNewHabitName("");
-  
+
   }
 
+
+  //Inverse la complétion de l'habit correspondant à l'identifiant reçu
   function toggleHabit(id: number) {
     const updatedHabits = habits.map(
       (habit) => {
@@ -57,11 +84,18 @@ export default function Home() {
         }
         return habit;
       });
-    //pour tester si le completed est bien modifié
-    console.table(updatedHabits);
 
     setHabits(updatedHabits)
   };
+
+  //Fonction de suppression de habit
+  function deleteHabit(id: number) {
+    const remainingHabits = habits.filter((habit) => habit.id !== id);
+
+    setHabits(remainingHabits);
+  }
+
+
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
@@ -77,10 +111,10 @@ export default function Home() {
 
           <form onSubmit={addHabit}>
             <input
-            type="text"
-            value={newHabitName}
-            onChange={(event)=>setNewHabitName(event.target.value)}
-            placeholder="New habit"
+              type="text"
+              value={newHabitName}
+              onChange={(event) => setNewHabitName(event.target.value)}
+              placeholder="New habit"
             />
             <button type="submit">Add</button>
           </form>
@@ -95,6 +129,10 @@ export default function Home() {
                   />
                   {habit.name}
                 </label>
+                <button type="button" onClick={() =>
+                  deleteHabit(habit.id)}>
+                  Delete
+                </button>
               </li>
             ))}
           </ul>
