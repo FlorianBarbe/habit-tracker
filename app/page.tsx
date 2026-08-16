@@ -1,13 +1,33 @@
+import HabitTracker from "./HabitTracker";
+
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-zinc-100 px-4 py-12 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <main className="mx-auto w-full max-w-xl rounded-2xl bg-white p-6 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800 sm:p-8">
+        <div className="flex flex-col gap-6">
+          <header>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Habit Tracker
+            </h1>
+          </header>
+
+          <HabitTracker />
+        </div>
+      </main>
+    </div>
+  );
+}
+
 /*
 Composant interactif : autorise les fonctionnalités exécutées dans le navigateur : useState, clics, saisie, etc.
 Next.js peut quand même prégénérer le HJTML in itial, puis React rend la page interactive dans le navigateur : c'est l'hydratation.
-*/
+
 "use client";
-/*
+
 - useState conserve une valeur entre les rendus React
 - SubmitEvent décrit uniqueent ^pour TypeScript le type d'un evnt de formulaire
 - type précise que cet import disparaîtra après la compilation vers JavaScript
-*/
+
 import { startTransition, useEffect, useState, type SubmitEvent } from "react";
 
 
@@ -98,13 +118,13 @@ export default function Home() {
     });
   }, []);
 
-  /*
+  
   - Texte actuellement saisi dans le champ d'ajout
   - Chaque useState retourne actuellement 2 elts :
     - la valeur actuelle;
     - une fonction permettant de le remplacer.
   Quand on appelle un setter comme setHabits, React mémorise la nouvelle valeur et réexécute  Home pour actualiser l'interface  
-  */
+  
   const [newHabitName, setNewHabitName] = useState("");
 
 
@@ -278,3 +298,4 @@ export default function Home() {
     </div>
   );
 }
+*/
