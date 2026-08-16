@@ -25,3 +25,33 @@ Install the dependencies:
 
 ```bash
 npm install
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## Available commands
+
+```bash
+npm run dev
+npm run lint
+npm run build
+npm run start
+```
+
+## Data persistence
+
+Habits are stored locally in the browser using `localStorage`.
+
+Data is specific to:
+
+- the browser profile;
+- the device;
+- the website origin, such as `http://localhost:3000`.
+
+No account or remote database is required for this version.
