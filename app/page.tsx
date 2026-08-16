@@ -1,13 +1,13 @@
-/*/
+/*
 Composant interactif : autorise les fonctionnalités exécutées dans le navigateur : useState, clics, saisie, etc.
 Next.js peut quand même prégénérer le HJTML in itial, puis React rend la page interactive dans le navigateur : c'est l'hydratation.
-/*/
+*/
 "use client";
-/*/
+/*
 - useState conserve une valeur entre les rendus React
 - SubmitEvent décrit uniqueent ^pour TypeScript le type d'un evnt de formulaire
 - type précise que cet import disparaîtra après la compilation vers JavaScript
-/*/
+*/
 import { startTransition, useEffect, useState, type SubmitEvent } from "react";
 
 
@@ -98,13 +98,13 @@ export default function Home() {
     });
   }, []);
 
-  /*/
+  /*
   - Texte actuellement saisi dans le champ d'ajout
   - Chaque useState retourne actuellement 2 elts :
     - la valeur actuelle;
     - une fonction permettant de le remplacer.
   Quand on appelle un setter comme setHabits, React mémorise la nouvelle valeur et réexécute  Home pour actualiser l'interface  
-  /*/
+  */
   const [newHabitName, setNewHabitName] = useState("");
 
 
