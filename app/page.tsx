@@ -38,6 +38,21 @@ function saveHabits(habitsToSave: Habit[]) {
 }
 
 
+// Vérifie qu'une valeur possède réellement la structure d'une habitude
+function isHabit(value: unknown): value is Habit {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const possibleHabit = value as Record<string, unknown>;
+
+  return (
+    typeof possibleHabit.id === "number" &&
+    typeof possibleHabit.name === "string" &&
+    typeof possibleHabit.completed === "boolean"
+  );
+}
+
 // Lit et reconvertit les habitudes sauvegardées
 function loadHabits(): Habit[] | null {
   const savedHabits = localStorage.getItem(STORAGE_KEY);
@@ -46,7 +61,22 @@ function loadHabits(): Habit[] | null {
     return null;
   }
 
-  return JSON.parse(savedHabits) as Habit[];
+  try {
+    const parsedData: unknown = JSON.parse(savedHabits);
+
+    if (
+      !Array.isArray(parsedData) ||
+      !parsedData.every(isHabit)
+    ) {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+
+    return parsedData;
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
 }
 
 export default function Home() {
