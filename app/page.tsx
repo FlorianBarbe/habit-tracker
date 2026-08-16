@@ -8,7 +8,7 @@ Next.js peut quand même prégénérer le HJTML in itial, puis React rend la pag
 - SubmitEvent décrit uniqueent ^pour TypeScript le type d'un evnt de formulaire
 - type précise que cet import disparaîtra après la compilation vers JavaScript
 /*/
-import { useState, type SubmitEvent } from "react";
+import { startTransition, useEffect, useState, type SubmitEvent } from "react";
 
 
 
@@ -27,13 +27,46 @@ const initialHabits: Habit[] = [
   { id: 4, name: "Take vitamins", completed: false },
 ];
 
+//Nom utilisé pour stocker les habitudes dans le navigateur
+const STORAGE_KEY = "habit-tracker-habits";
+
+function saveHabits(habitsToSave: Habit[]) {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(habitsToSave),
+  );
+}
 
 
+// Lit et reconvertit les habitudes sauvegardées
+function loadHabits(): Habit[] | null {
+  const savedHabits = localStorage.getItem(STORAGE_KEY);
+
+  if (savedHabits === null) {
+    return null;
+  }
+
+  return JSON.parse(savedHabits) as Habit[];
+}
 
 export default function Home() {
 
   //Liste des habitudes actuellement affichées
   const [habits, setHabits] = useState(initialHabits);
+
+
+  // Restaure les habitudes sauvegardées après le premier affichage
+  useEffect(() => {
+    const savedHabits = loadHabits();
+
+    if (savedHabits === null) {
+      return;
+    }
+
+    startTransition(() => {
+      setHabits(savedHabits);
+    });
+  }, []);
 
   /*/
   - Texte actuellement saisi dans le champ d'ajout
@@ -43,6 +76,20 @@ export default function Home() {
   Quand on appelle un setter comme setHabits, React mémorise la nouvelle valeur et réexécute  Home pour actualiser l'interface  
   /*/
   const [newHabitName, setNewHabitName] = useState("");
+
+
+  // Charge la sauvegarde après le premier rendu dans le navigateur
+  useEffect(() => {
+    const savedHabits = loadHabits();
+
+    if (savedHabits === null) {
+      return;
+    }
+
+    startTransition(() => {
+      setHabits(savedHabits);
+    });
+  }, []);
 
   //fonctions
 
@@ -67,7 +114,11 @@ export default function Home() {
     };
 
     //Crée un nouveau contenant les nouvelles habitudes et les anciennes
-    setHabits([...habits, newHabit]);
+    const updatedHabits = [...habits, newHabit];
+
+    setHabits(updatedHabits);
+    saveHabits(updatedHabits);
+
 
     //Vide le champ après l'ajout
     setNewHabitName("");
@@ -85,7 +136,8 @@ export default function Home() {
         return habit;
       });
 
-    setHabits(updatedHabits)
+    setHabits(updatedHabits);
+    saveHabits(updatedHabits);
   };
 
   //Fonction de suppression de habit
@@ -93,6 +145,7 @@ export default function Home() {
     const remainingHabits = habits.filter((habit) => habit.id !== id);
 
     setHabits(remainingHabits);
+    saveHabits(remainingHabits);
   }
 
 
