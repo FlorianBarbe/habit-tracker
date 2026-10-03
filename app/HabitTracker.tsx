@@ -47,6 +47,35 @@ function getLocalDateKey(date: Date): string {
     return `${year}-${month}-${day}`;
 }
 
+function formatDateKey(dateKey: string): string {
+    const [year, month, day] = dateKey
+        .split("-")
+        .map(Number);
+
+    const date = new Date(year, month - 1, day);
+
+    return new Intl.DateTimeFormat("en-US", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+    }).format(date);
+}
+
+function shiftDateKey(
+    dateKey: string,
+    numberOfDays: number,
+): string {
+    const [year, month, day] = dateKey
+        .split("-")
+        .map(Number);
+
+    const date = new Date(year, month - 1, day);
+    date.setDate(date.getDate() + numberOfDays);
+
+    return getLocalDateKey(date);
+}
+
 function isHabit(value: unknown): value is Habit {
     if (typeof value !== "object" || value === null) {
         return false;
@@ -166,7 +195,10 @@ export default function HabitTracker() {
         useState<HabitTrackerData>(initialData);
 
     const [newHabitName, setNewHabitName] = useState("");
-    const [todayKey, setTodayKey] = useState("");
+    const [calendar, setCalendar] = useState({
+        todayKey: "",
+        selectedDateKey: "",
+    });
     const [hasLoaded, setHasLoaded] = useState(false);
 
     useEffect(() => {
@@ -175,7 +207,10 @@ export default function HabitTracker() {
 
         startTransition(() => {
             setData(savedData ?? initialData);
-            setTodayKey(firstTodayKey);
+            setCalendar({
+                todayKey: firstTodayKey,
+                selectedDateKey: firstTodayKey,
+            });
             setHasLoaded(true);
         });
 
@@ -183,11 +218,24 @@ export default function HabitTracker() {
             const nextTodayKey = getLocalDateKey(new Date());
 
             startTransition(() => {
-                setTodayKey((currentTodayKey) =>
-                    currentTodayKey === nextTodayKey
-                        ? currentTodayKey
-                        : nextTodayKey,
-                );
+                setCalendar((currentCalendar) => {
+                    if (
+                        currentCalendar.todayKey === nextTodayKey
+                    ) {
+                        return currentCalendar;
+                    }
+
+                    return {
+                        todayKey: nextTodayKey,
+                        selectedDateKey:
+                            currentCalendar.selectedDateKey ===
+                                currentCalendar.todayKey ||
+                            currentCalendar.selectedDateKey >
+                                nextTodayKey
+                                ? nextTodayKey
+                                : currentCalendar.selectedDateKey,
+                    };
+                });
             });
         }
 
@@ -217,7 +265,13 @@ export default function HabitTracker() {
         saveTrackerData(data);
     }, [data, hasLoaded]);
 
-    if (!hasLoaded || todayKey === "") {
+    const { todayKey, selectedDateKey } = calendar;
+
+    if (
+        !hasLoaded ||
+        todayKey === "" ||
+        selectedDateKey === ""
+    ) {
         return (
             <p
                 className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"
@@ -232,7 +286,7 @@ export default function HabitTracker() {
         data.entries
             .filter(
                 (entry) =>
-                    entry.date === todayKey &&
+                    entry.date === selectedDateKey &&
                     entry.completed,
             )
             .map((entry) => entry.habitId),
@@ -247,6 +301,43 @@ export default function HabitTracker() {
             ? 0
             : (completedHabitsCount / data.habits.length) *
             100;
+
+    const isViewingToday =
+        selectedDateKey === todayKey;
+
+    function showPreviousDay() {
+        setCalendar((currentCalendar) => ({
+            ...currentCalendar,
+            selectedDateKey: shiftDateKey(
+                currentCalendar.selectedDateKey,
+                -1,
+            ),
+        }));
+    }
+
+    function showNextDay() {
+        setCalendar((currentCalendar) => {
+            if (
+                currentCalendar.selectedDateKey >=
+                currentCalendar.todayKey
+            ) {
+                return currentCalendar;
+            }
+
+            const nextDateKey = shiftDateKey(
+                currentCalendar.selectedDateKey,
+                1,
+            );
+
+            return {
+                ...currentCalendar,
+                selectedDateKey:
+                    nextDateKey > currentCalendar.todayKey
+                        ? currentCalendar.todayKey
+                        : nextDateKey,
+            };
+        });
+    }
 
     function addHabit(
         event: SubmitEvent<HTMLFormElement>,
@@ -285,13 +376,13 @@ export default function HabitTracker() {
                 currentData.entries.some(
                     (entry) =>
                         entry.habitId === habitId &&
-                        entry.date === todayKey,
+                        entry.date === selectedDateKey,
                 );
 
             const updatedEntries = entryAlreadyExists
                 ? currentData.entries.map((entry) =>
                     entry.habitId === habitId &&
-                        entry.date === todayKey
+                        entry.date === selectedDateKey
                         ? {
                             ...entry,
                             completed: !entry.completed,
@@ -302,7 +393,7 @@ export default function HabitTracker() {
                     ...currentData.entries,
                     {
                         habitId,
-                        date: todayKey,
+                        date: selectedDateKey,
                         completed: true,
                     },
                 ];
@@ -327,9 +418,41 @@ export default function HabitTracker() {
 
     return (
         <div className="flex flex-col gap-6">
-            <h2 className="text-base font-medium text-zinc-500 dark:text-zinc-400">
-                <time dateTime={todayKey}>Today</time>
-            </h2>
+            <div className="space-y-3">
+                <h2
+                    className="text-center text-base font-medium text-zinc-500 dark:text-zinc-400"
+                    aria-live="polite"
+                >
+                    <time dateTime={selectedDateKey}>
+                        {isViewingToday ? "Today — " : ""}
+                        {formatDateKey(selectedDateKey)}
+                    </time>
+                </h2>
+
+                <nav
+                    className="grid grid-cols-2 gap-2"
+                    aria-label="Day navigation"
+                >
+                    <button
+                        className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                        type="button"
+                        onClick={showPreviousDay}
+                        aria-label="Previous day"
+                    >
+                        ← Previous day
+                    </button>
+
+                    <button
+                        className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                        type="button"
+                        onClick={showNextDay}
+                        disabled={isViewingToday}
+                        aria-label="Next day"
+                    >
+                        Next day →
+                    </button>
+                </nav>
+            </div>
 
             <section className="space-y-2">
                 <div className="flex justify-between text-sm text-zinc-500 dark:text-zinc-400">
